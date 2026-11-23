@@ -36,8 +36,21 @@ const categories = [...new Set(catalog.map(({ latest }) => latest.metadata.categ
           </select>
         </label>
       </div>
-      <p class="market-count" aria-live="polite" data-market-count>{catalog.length} 个配置</p>
-      <div class="market-results">
+      <div class="market-result-toolbar">
+        <p class="market-count" aria-live="polite" data-market-count>{catalog.length} 个配置</p>
+        <fieldset class="market-view-switch" data-market-views hidden>
+          <legend class="rsi-visually-hidden">配置视图</legend>
+          <label>
+            <input class="rsi-visually-hidden" type="radio" name="market-view" value="cards" checked />
+            <span><i class="market-view-icon market-view-grid" aria-hidden="true"></i>卡片</span>
+          </label>
+          <label>
+            <input class="rsi-visually-hidden" type="radio" name="market-view" value="list" />
+            <span><i class="market-view-icon market-view-list" aria-hidden="true"></i>列表</span>
+          </label>
+        </fieldset>
+      </div>
+      <div class="market-results" data-market-results data-view="cards">
         {catalog.map((project) => <PackageCard project={project} filterable />)}
       </div>
       <div class="market-empty" data-market-empty hidden>

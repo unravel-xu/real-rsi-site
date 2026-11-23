@@ -23,10 +23,14 @@ const keywords = [definition.name, manifest.package_id, metadata.summary, metada
     <span class="package-kind">{metadata.category}</span>
     <span class="rsi-version">v{latest.version}</span>
   </div>
-  <h3><a href={sitePath(`market/${project.owner}/${project.project}/`)}>{definition.name}</a></h3>
-  <p>{metadata.summary}</p>
-  <p class="package-id">{manifest.package_id}</p>
-  <ul class="tag-list" aria-label="标签">
-    {metadata.tags.map((tag) => <li>{tag}</li>)}
-  </ul>
+  <div class="package-card-content">
+    <h3><a href={sitePath(`market/${project.owner}/${project.project}/`)}>{definition.name}</a></h3>
+    <p>{metadata.summary}</p>
+    <div class="package-card-meta">
+      <p class="package-id">{manifest.package_id}</p>
+      <ul class="tag-list" aria-label="标签">
+        {metadata.tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+    </div>
+  </div>
 </article>
