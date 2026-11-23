@@ -19,6 +19,7 @@ const { title, description, section } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
+    {Astro.response.status !== 404 && <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />}
     <link rel="icon" href={sitePath('favicon.png')} />
     <title>{title}</title>
     <ThemeProvider />

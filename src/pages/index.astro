@@ -4,7 +4,7 @@ import PackageCard from '../components/PackageCard.astro';
 import UiIcon from '../components/UiIcon.astro';
 import WorkflowPreview from '../components/WorkflowPreview.astro';
 import { loadCatalog } from '../lib/catalog.mjs';
-import { sitePath } from '../lib/links';
+import { sitePath, siteSectionPath } from '../lib/links';
 
 const catalog = loadCatalog();
 const gsm8k = catalog.find(({ owner, project }) => owner === 'real-rsi' && project === 'gsm8k-prompt');
@@ -26,8 +26,8 @@ const guides = [
       <h1 id="home-title">让研究设计<br />可以被复用。</h1>
       <p class="rsi-lead">把 Module、接口与 Workflow 组织成可审阅的 System。从社区下载一份设计，在你的 Panel 里继续做实验。</p>
       <div class="rsi-actions">
-        <a class="rsi-button rsi-button-primary" href={sitePath('market/')}><UiIcon name="grid" />浏览配置市场</a>
-        <a class="rsi-button" href={sitePath('docs/')}><UiIcon name="book" />阅读文档</a>
+        <a class="rsi-button rsi-button-primary" href={siteSectionPath('market/')}><UiIcon name="grid" />浏览配置市场</a>
+        <a class="rsi-button" href={siteSectionPath('docs/')}><UiIcon name="book" />阅读文档</a>
       </div>
     </div>
 
@@ -42,7 +42,7 @@ const guides = [
       <div>
         <div class="rsi-section-heading">
           <h2 id="resources-title">从一个 System 开始</h2>
-          <a class="rsi-text-link" href={sitePath('market/')}>查看全部配置</a>
+          <a class="rsi-text-link" href={siteSectionPath('market/')}>查看全部配置</a>
         </div>
         {featured && <PackageCard project={featured} />}
       </div>

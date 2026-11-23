@@ -1,7 +1,7 @@
 ---
 import { Icon } from '@astrojs/starlight/components';
 import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
-import { navItems, repository, sitePath } from '../lib/links';
+import { navItems, repository, siteSectionPath } from '../lib/links';
 
 interface Props {
   section: 'home' | 'docs' | 'market';
@@ -10,7 +10,7 @@ const { section } = Astro.props;
 ---
 
 <div class="rsi-nav-inner">
-  <a class="rsi-brand" href={sitePath()} aria-label="real-rsi 首页">
+  <a class="rsi-brand" href={siteSectionPath()} aria-label="real-rsi 首页">
     <span class="rsi-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <span>real-rsi</span>
   </a>
