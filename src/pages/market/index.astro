@@ -1,11 +1,17 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import PackageCard from '../../components/PackageCard.astro';
+import UiIcon from '../../components/UiIcon.astro';
 import { loadCatalog } from '../../lib/catalog.mjs';
 import { sitePath } from '../../lib/links';
 
 const catalog = loadCatalog();
 const categories = [...new Set(catalog.map(({ latest }) => latest.metadata.category))].sort();
+const tagCounts = new Map<string, number>();
+for (const { latest } of catalog) {
+  for (const tag of latest.metadata.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+}
+const tags = [...tagCounts].sort(([a, countA], [b, countB]) => countB - countA || a.localeCompare(b, 'zh-CN'));
 ---
 
 <SiteLayout
@@ -13,40 +19,51 @@ const categories = [...new Set(catalog.map(({ latest }) => latest.metadata.categ
   description="搜索社区分享的 System 设计，查看版本与接口，下载并导入 real-rsi Panel。"
   section="market"
 >
-  <section class="page-intro">
-    <div class="rsi-container">
-      <h1>配置市场</h1>
-      <p class="rsi-lead">浏览社区分享的 System 设计，下载指定版本，在你的 Panel 中打开。</p>
+  <section class="rsi-container page-intro market-intro" aria-labelledby="market-title">
+    <div>
+      <h1 id="market-title">配置市场</h1>
+      <p class="rsi-lead">找一份可以复用的 System 设计，下载后在你的 Panel 中打开。</p>
     </div>
+    <a class="rsi-button" href={sitePath('docs/contribute/')}><UiIcon name="fork" />贡献配置</a>
   </section>
 
   <section class="rsi-container market-body" aria-label="配置目录">
     <market-catalog class="market-catalog">
       <div class="market-tools" role="search" aria-label="搜索配置">
         <label class="market-search">
-          <span class="market-search-icon" aria-hidden="true"></span>
+          <UiIcon name="search" />
           <span class="rsi-visually-hidden">搜索配置</span>
           <input type="search" placeholder="搜索名称、作者或标签" autocomplete="off" data-market-query />
         </label>
         <label class="market-select">
+          <UiIcon name="filter" />
           <span class="rsi-visually-hidden">配置分类</span>
           <select data-market-category>
             <option value="">全部分类</option>
             {categories.map((category) => <option value={category}>{category}</option>)}
           </select>
+          <UiIcon class="select-chevron" name="chevronDown" />
         </label>
       </div>
+
+      {tags.length > 0 && (
+        <div class="market-tags" role="group" aria-label="按标签筛选" data-market-tags hidden>
+          <span aria-hidden="true"><UiIcon name="tag" />标签</span>
+          {tags.map(([tag]) => <button type="button" data-market-tag={tag} aria-pressed="false">{tag}</button>)}
+        </div>
+      )}
+
       <div class="market-result-toolbar">
         <p class="market-count" aria-live="polite" data-market-count>{catalog.length} 个配置</p>
         <fieldset class="market-view-switch" data-market-views hidden>
           <legend class="rsi-visually-hidden">配置视图</legend>
           <label>
             <input class="rsi-visually-hidden" type="radio" name="market-view" value="cards" checked />
-            <span><i class="market-view-icon market-view-grid" aria-hidden="true"></i>卡片</span>
+            <span><UiIcon name="grid" />卡片</span>
           </label>
           <label>
             <input class="rsi-visually-hidden" type="radio" name="market-view" value="list" />
-            <span><i class="market-view-icon market-view-list" aria-hidden="true"></i>列表</span>
+            <span><UiIcon name="list" />列表</span>
           </label>
         </fieldset>
       </div>
@@ -54,16 +71,20 @@ const categories = [...new Set(catalog.map(({ latest }) => latest.metadata.categ
         {catalog.map((project) => <PackageCard project={project} filterable />)}
       </div>
       <div class="market-empty" data-market-empty hidden>
+        <span class="rsi-package-icon"><UiIcon name="search" /></span>
         <h2>没有匹配的配置</h2>
         <p>试试其他关键词，或清除筛选。</p>
         <button class="rsi-button" type="button" data-market-reset>清除筛选</button>
       </div>
     </market-catalog>
 
-    <aside class="market-contribute">
-      <h2>分享一个 System</h2>
-      <p>从 Panel 导出设计，通过 GitHub PR 提交。审核后的配置会自动加入此目录。</p>
-      <a class="rsi-text-link" href={sitePath('docs/contribute/')}>打开投稿指南</a>
+    <aside class="market-help" aria-labelledby="market-help-title">
+      <div class="market-help-title"><UiIcon name="book" /><h2 id="market-help-title">使用配置</h2></div>
+      <ol>
+        <li>打开配置详情，下载设计 ZIP。</li>
+        <li>在 Panel 的「导入系统」中打开文件。</li>
+      </ol>
+      <a class="rsi-text-link" href={sitePath('docs/import/')}>查看导入指南</a>
     </aside>
   </section>
 </SiteLayout>

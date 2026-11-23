@@ -10,29 +10,52 @@ class MarketCatalog extends HTMLElement {
     const reset = this.querySelector<HTMLButtonElement>('[data-market-reset]');
     if (!query || !category || !count || !results || !empty || !reset) return;
 
-    const cards = [...this.querySelectorAll<HTMLElement>('[data-market-card]')].map((card) => ({
+    const cards = [...results.querySelectorAll<HTMLElement>('[data-market-card]')].map((card) => ({
       card,
       keywords: (card.dataset.keywords ?? '').normalize('NFKC').toLowerCase(),
       category: card.dataset.category,
+      tags: new Set<string>(JSON.parse(card.dataset.tags ?? '[]')),
     }));
+
+    const tags = this.querySelector<HTMLElement>('[data-market-tags]');
+    const tagChoices = [...this.querySelectorAll<HTMLButtonElement>('[data-market-tag]')];
+    const selectedTags = new Set<string>();
+
     const filter = () => {
       const terms = query.value.normalize('NFKC').toLowerCase().trim().split(/\s+/).filter(Boolean);
+      const activeTags = [...selectedTags];
       let visible = 0;
       for (const entry of cards) {
         const matchesCategory = !category.value || entry.category === category.value;
         const matchesQuery = terms.every((term) => entry.keywords.includes(term));
-        entry.card.hidden = !(matchesCategory && matchesQuery);
+        const matchesTags = activeTags.every((tag) => entry.tags.has(tag));
+        entry.card.hidden = !(matchesCategory && matchesQuery && matchesTags);
         if (!entry.card.hidden) visible++;
       }
       count.textContent = `${visible} 个配置`;
       results.hidden = visible === 0;
       empty.hidden = visible !== 0;
     };
+
     query.addEventListener('input', filter);
     category.addEventListener('change', filter);
+    for (const choice of tagChoices) {
+      const tag = choice.dataset.marketTag!;
+      choice.addEventListener('click', () => {
+        const selected = selectedTags.has(tag);
+        if (selected) selectedTags.delete(tag);
+        else selectedTags.add(tag);
+        choice.setAttribute('aria-pressed', String(!selected));
+        filter();
+      });
+    }
+    if (tags) tags.hidden = false;
+
     reset.addEventListener('click', () => {
       query.value = '';
       category.value = '';
+      selectedTags.clear();
+      for (const choice of tagChoices) choice.setAttribute('aria-pressed', 'false');
       filter();
       query.focus();
     });

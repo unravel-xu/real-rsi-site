@@ -1,11 +1,19 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
 import PackageCard from '../components/PackageCard.astro';
+import UiIcon from '../components/UiIcon.astro';
+import WorkflowPreview from '../components/WorkflowPreview.astro';
 import { loadCatalog } from '../lib/catalog.mjs';
 import { sitePath } from '../lib/links';
 
 const catalog = loadCatalog();
-const featured = catalog.find(({ owner, project }) => owner === 'real-rsi' && project === 'gsm8k-prompt') ?? catalog[0];
+const gsm8k = catalog.find(({ owner, project }) => owner === 'real-rsi' && project === 'gsm8k-prompt');
+const featured = gsm8k ?? catalog[0];
+const guides = [
+  { title: '导入 System 设计', description: '在 Panel 中打开 ZIP 或 system.json。', path: 'docs/import/', icon: 'download' },
+  { title: '了解 GSM8K 示例', description: '查看 Workflow 与 CLI 复跑条件。', path: 'docs/gsm8k/', icon: 'book' },
+  { title: '贡献你的配置', description: '导出设计并提交 GitHub PR。', path: 'docs/contribute/', icon: 'fork' },
+] as const;
 ---
 
 <SiteLayout
@@ -15,42 +23,42 @@ const featured = catalog.find(({ owner, project }) => owner === 'real-rsi' && pr
 >
   <section class="rsi-container home-hero" aria-labelledby="home-title">
     <div class="home-intro">
-      <p class="rsi-eyebrow">real-rsi 研究系统工作台</p>
-      <h1 id="home-title">构建、分享你的<br />研究系统<span>。</span></h1>
-      <p class="rsi-lead">把 Module、接口与 Workflow 组织成可审阅的 System。下载社区设计，在自己的 Panel 里继续编辑。</p>
+      <h1 id="home-title">让研究设计<br />可以被复用。</h1>
+      <p class="rsi-lead">把 Module、接口与 Workflow 组织成可审阅的 System。从社区下载一份设计，在你的 Panel 里继续做实验。</p>
       <div class="rsi-actions">
-        <a class="rsi-button rsi-button-primary" href={sitePath('market/')}>浏览配置市场</a>
-        <a class="rsi-button" href={sitePath('docs/')}>阅读文档</a>
+        <a class="rsi-button rsi-button-primary" href={sitePath('market/')}><UiIcon name="grid" />浏览配置市场</a>
+        <a class="rsi-button" href={sitePath('docs/')}><UiIcon name="book" />阅读文档</a>
       </div>
     </div>
 
-    <figure class="workflow-preview">
-      <figcaption>
-        <span class="workflow-label"><span class="workflow-indicator"></span> GSM8K 示例</span>
-        <span class="workflow-file">SYSTEM DESIGN</span>
-      </figcaption>
-      <div class="workflow-title">Prompt 自改进</div>
-      <div class="workflow-subtitle">诊断 · 改进 · 验证</div>
-      <div class="workflow-grid">
-        <div class="workflow-node"><i></i><div><strong>Provider</strong><span>加载题目</span></div></div>
-        <div class="workflow-node"><i></i><div><strong>Executor</strong><span>执行 Prompt</span></div></div>
-        <div class="workflow-node"><i></i><div><strong>Improver</strong><span>提出候选</span></div></div>
-        <div class="workflow-node"><i></i><div><strong>Evaluator</strong><span>比较结果</span></div></div>
-      </div>
-    </figure>
+    <WorkflowPreview
+      href={sitePath(gsm8k ? 'market/real-rsi/gsm8k-prompt/' : 'docs/gsm8k/')}
+      version={gsm8k?.latest.version}
+    />
   </section>
 
-  <section class="rsi-container home-resources" aria-labelledby="resources-title">
-    <div class="rsi-section-heading">
-      <h2 id="resources-title">从 GSM8K 开始</h2>
-      <a class="rsi-text-link" href={sitePath('market/')}>查看全部配置</a>
-    </div>
-    <div class="home-resources-grid">
-      {featured && <PackageCard project={featured} />}
-      <div class="home-guide-list">
-        <a href={sitePath('docs/import/')}><strong>导入 System 设计</strong><span>把设计 ZIP 或 system.json 打开为独立草稿。</span></a>
-        <a href={sitePath('docs/gsm8k/')}><strong>了解 GSM8K 示例</strong><span>查看四个 Module 的职责和 CLI 复跑条件。</span></a>
-        <a href={sitePath('docs/contribute/')}><strong>分享你的配置</strong><span>导出设计并向公开仓库提交 GitHub PR。</span></a>
+  <section class="home-start" aria-labelledby="resources-title">
+    <div class="rsi-container home-resources">
+      <div>
+        <div class="rsi-section-heading">
+          <h2 id="resources-title">从一个 System 开始</h2>
+          <a class="rsi-text-link" href={sitePath('market/')}>查看全部配置</a>
+        </div>
+        {featured && <PackageCard project={featured} />}
+      </div>
+      <div>
+        <h2 class="home-guides-title">使用指南</h2>
+        <ul class="home-guide-list">
+          {guides.map((guide) => (
+            <li>
+              <a href={sitePath(guide.path)}>
+                <span class="guide-icon"><UiIcon name={guide.icon} /></span>
+                <span class="guide-copy"><strong>{guide.title}</strong><small>{guide.description}</small></span>
+                <UiIcon class="guide-chevron" name="chevron" />
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   </section>

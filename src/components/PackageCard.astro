@@ -1,6 +1,7 @@
 ---
 import type { Project } from '../lib/catalog.mjs';
 import { sitePath } from '../lib/links';
+import UiIcon from './UiIcon.astro';
 
 interface Props {
   project: Project;
@@ -10,6 +11,7 @@ const { project, filterable = false } = Astro.props;
 const { latest } = project;
 const { manifest, metadata, definition } = latest;
 const keywords = [definition.name, manifest.package_id, metadata.summary, metadata.category, ...metadata.tags].join(' ');
+const href = sitePath(`market/${project.owner}/${project.project}/`);
 ---
 
 <article
@@ -17,20 +19,23 @@ const keywords = [definition.name, manifest.package_id, metadata.summary, metada
   data-market-card={filterable ? '' : undefined}
   data-category={filterable ? metadata.category : undefined}
   data-keywords={filterable ? keywords : undefined}
+  data-tags={filterable ? JSON.stringify(metadata.tags) : undefined}
 >
-  <div class="package-card-top">
-    <span class="rsi-package-icon" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span class="package-kind">{metadata.category}</span>
-    <span class="rsi-version">v{latest.version}</span>
+  <span class="rsi-package-icon"><UiIcon name="box" /></span>
+  <div class="package-card-identity">
+    <h3><a href={href}>{definition.name}</a></h3>
+    <p class="package-id">{manifest.package_id}</p>
   </div>
+  <span class="rsi-version">v{latest.version}</span>
   <div class="package-card-content">
-    <h3><a href={sitePath(`market/${project.owner}/${project.project}/`)}>{definition.name}</a></h3>
-    <p>{metadata.summary}</p>
+    <p class="package-description">{metadata.summary}</p>
     <div class="package-card-meta">
-      <p class="package-id">{manifest.package_id}</p>
-      <ul class="tag-list" aria-label="标签">
-        {metadata.tags.map((tag) => <li>{tag}</li>)}
-      </ul>
+      <span class="package-kind">{metadata.category}</span>
+      {metadata.tags.length > 0 && (
+        <ul class="tag-list" aria-label="标签">
+          {metadata.tags.map((tag) => <li>{tag}</li>)}
+        </ul>
+      )}
     </div>
   </div>
 </article>

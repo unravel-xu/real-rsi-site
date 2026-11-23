@@ -1,6 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import SiteLayout from '../../../../layouts/SiteLayout.astro';
+import UiIcon from '../../../../components/UiIcon.astro';
 import { loadCatalog } from '../../../../lib/catalog.mjs';
 import { sitePath } from '../../../../lib/links';
 
@@ -58,7 +59,7 @@ const isGsm8k = manifest.package_id === 'real-rsi/gsm8k-prompt';
     <aside class="download-panel" aria-labelledby="download-heading">
       <h2 id="download-heading">导入到 Panel</h2>
       <p>下载设计，在 Panel 的「导入系统」中选择文件，会创建独立草稿。</p>
-      <a class="rsi-button rsi-button-primary" href={download(latest.version, 'design.zip')} download>下载设计 ZIP</a>
+      <a class="rsi-button rsi-button-primary" href={download(latest.version, 'design.zip')} download><UiIcon name="download" />下载设计 ZIP</a>
       <a class="rsi-text-link" href={sitePath('docs/import/')}>查看导入指南</a>
       <dl class="download-facts">
         <div><dt>最新版本</dt><dd>v{latest.version}</dd></div>

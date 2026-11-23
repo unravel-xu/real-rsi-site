@@ -1,0 +1,41 @@
+---
+import UiIcon from './UiIcon.astro';
+
+interface Props {
+  href: string;
+  version?: string;
+}
+
+const { href, version } = Astro.props;
+const steps = [
+  { name: 'Provider', summary: '载入诊断题', icon: 'data' },
+  { name: 'Executor', summary: '执行基线 Prompt', icon: 'play' },
+  { name: 'Evaluator', summary: '评测并生成诊断', icon: 'check' },
+] as const;
+---
+
+<figure class="workflow-preview">
+  <figcaption class="workflow-header">
+    <span class="workflow-header-mark"><UiIcon name="fork" /></span>
+    <span class="workflow-caption"><strong>GSM8K Prompt 自改进</strong><span>Workflow 概览</span></span>
+    {version && <span class="workflow-version">v{version}</span>}
+  </figcaption>
+  <div class="workflow-canvas">
+    <ol class="workflow-steps" aria-label="基线诊断流程">
+      {steps.map((step) => (
+        <li class="workflow-step">
+          <UiIcon name={step.icon} />
+          <span><strong>{step.name}</strong><small>{step.summary}</small></span>
+        </li>
+      ))}
+    </ol>
+    <div class="workflow-feedback">
+      <span class="workflow-loop"><UiIcon name="loop" /></span>
+      <div><strong>Improver</strong><p>根据诊断提出候选 Prompt，再交回 Executor 进行验证。</p></div>
+    </div>
+  </div>
+  <div class="workflow-footer">
+    <span>4 个 Module</span>
+    <a href={href}>查看示例配置</a>
+  </div>
+</figure>
