@@ -1,0 +1,13 @@
+---
+import PageFrame from '@astrojs/starlight/components/PageFrame.astro';
+import SiteFooter from './SiteFooter.astro';
+---
+
+<div class="rsi-docs-shell">
+  <PageFrame>
+    <slot name="header" slot="header" />
+    <slot name="sidebar" slot="sidebar" />
+    <slot />
+  </PageFrame>
+  <SiteFooter />
+</div>

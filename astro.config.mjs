@@ -13,7 +13,10 @@ export default defineConfig({
       locales: {
         root: { label: '简体中文', lang: 'zh-CN' },
       },
-      components: { Header: './src/components/DocsHeader.astro' },
+      components: {
+        Header: './src/components/DocsHeader.astro',
+        PageFrame: './src/components/DocsFrame.astro',
+      },
       customCss: ['./src/styles/site.css'],
       sidebar: [
         {
