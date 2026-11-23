@@ -1,4 +1,6 @@
 ---
+import { Icon } from '@astrojs/starlight/components';
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
 import { navItems, repository, sitePath } from '../lib/links';
 
 interface Props {
@@ -19,6 +21,9 @@ const { section } = Astro.props;
   </nav>
   <div class="rsi-nav-actions">
     <slot />
-    <a class="rsi-repo-link" href={repository}>GitHub</a>
+    <a class="rsi-repo-link" href={repository} aria-label="GitHub" title="GitHub">
+      <Icon name="github" size="1.05rem" />
+    </a>
+    <ThemeSelect />
   </div>
 </div>
