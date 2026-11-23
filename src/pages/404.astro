@@ -1,0 +1,14 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { sitePath } from '../lib/links';
+---
+<SiteLayout title="页面未找到｜real-rsi" description="此页面未找到。" section="home">
+  <section class="rsi-container rsi-not-found" data-pagefind-ignore="all">
+    <h1>页面未找到</h1>
+    <p>你可以回到首页，或在配置市场查找设计。</p>
+    <div class="rsi-actions">
+      <a class="rsi-button rsi-button-primary" href={sitePath()}>返回首页</a>
+      <a class="rsi-button" href={sitePath('market/')}>配置市场</a>
+    </div>
+  </section>
+</SiteLayout>

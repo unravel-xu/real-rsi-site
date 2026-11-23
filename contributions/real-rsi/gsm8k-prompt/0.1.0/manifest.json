@@ -1,0 +1,8 @@
+{
+  "manifest_version": 1,
+  "package_id": "real-rsi/gsm8k-prompt",
+  "version": "0.1.0",
+  "requires_sdk": ">=0.1.0,<0.2",
+  "system_schema": "rsi.system-definition.v4",
+  "system": "system.json"
+}

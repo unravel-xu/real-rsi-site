@@ -1,0 +1,43 @@
+name: Validate changes
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  ASTRO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Check changed contribution packages
+        run: npm run validate -- --since "$BASE_SHA"
+      - name: Build site changes
+        run: |
+          if git diff --quiet "$BASE_SHA" HEAD -- . ':(exclude)contributions/**'; then
+            echo 'Only contribution content changed.'
+          else
+            npm run validate
+            npm run check
+            npm run build
+          fi

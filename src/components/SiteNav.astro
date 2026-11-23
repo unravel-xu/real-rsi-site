@@ -1,0 +1,24 @@
+---
+import { navItems, repository, sitePath } from '../lib/links';
+
+interface Props {
+  section: 'home' | 'docs' | 'market';
+}
+const { section } = Astro.props;
+---
+
+<div class="rsi-nav-inner">
+  <a class="rsi-brand" href={sitePath()} aria-label="real-rsi 首页">
+    <span class="rsi-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span>real-rsi</span>
+  </a>
+  <nav class="rsi-nav-links" aria-label="主导航">
+    {navItems.map((item) => (
+      <a href={item.href} aria-current={item.section === section ? 'page' : undefined}>{item.text}</a>
+    ))}
+  </nav>
+  <div class="rsi-nav-actions">
+    <slot />
+    <a class="rsi-repo-link" href={repository}>GitHub</a>
+  </div>
+</div>

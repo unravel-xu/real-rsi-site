@@ -1,0 +1,39 @@
+---
+import ThemeProvider from '@astrojs/starlight/components/ThemeProvider.astro';
+import SiteNav from '../components/SiteNav.astro';
+import { repository, sitePath } from '../lib/links';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+  description: string;
+  section: 'home' | 'market';
+}
+const { title, description, section } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <link rel="icon" href={sitePath('favicon.png')} />
+    <title>{title}</title>
+    <ThemeProvider />
+  </head>
+  <body class="rsi-site">
+    <a class="rsi-skip" href="#main">跳到正文</a>
+    <header class="rsi-header"><SiteNav section={section} /></header>
+    <main id="main" data-pagefind-body>
+      <slot />
+    </main>
+    <footer class="rsi-footer" data-pagefind-ignore>
+      <div class="rsi-container rsi-footer-inner">
+        <span><strong>real-rsi</strong> · 文档与社区配置</span>
+        <a href={sitePath('docs/contribute/')}>贡献配置</a>
+        <a href={repository}>GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

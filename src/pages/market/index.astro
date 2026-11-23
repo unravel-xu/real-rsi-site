@@ -1,0 +1,60 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import PackageCard from '../../components/PackageCard.astro';
+import { loadCatalog } from '../../lib/catalog.mjs';
+import { sitePath } from '../../lib/links';
+
+const catalog = loadCatalog();
+const categories = [...new Set(catalog.map(({ latest }) => latest.metadata.category))].sort();
+---
+
+<SiteLayout
+  title="配置市场｜real-rsi"
+  description="搜索社区分享的 System 设计，查看版本与接口，下载并导入 real-rsi Panel。"
+  section="market"
+>
+  <section class="page-intro">
+    <div class="rsi-container">
+      <h1>配置市场</h1>
+      <p class="rsi-lead">浏览社区分享的 System 设计，下载指定版本，在你的 Panel 中打开。</p>
+    </div>
+  </section>
+
+  <section class="rsi-container market-body" aria-label="配置目录">
+    <market-catalog class="market-catalog">
+      <div class="market-tools" role="search" aria-label="搜索配置">
+        <label class="market-search">
+          <span class="market-search-icon" aria-hidden="true"></span>
+          <span class="rsi-visually-hidden">搜索配置</span>
+          <input type="search" placeholder="搜索名称、作者或标签" autocomplete="off" data-market-query />
+        </label>
+        <label class="market-select">
+          <span class="rsi-visually-hidden">配置分类</span>
+          <select data-market-category>
+            <option value="">全部分类</option>
+            {categories.map((category) => <option value={category}>{category}</option>)}
+          </select>
+        </label>
+      </div>
+      <p class="market-count" aria-live="polite" data-market-count>{catalog.length} 个配置</p>
+      <div class="market-results">
+        {catalog.map((project) => <PackageCard project={project} filterable />)}
+      </div>
+      <div class="market-empty" data-market-empty hidden>
+        <h2>没有匹配的配置</h2>
+        <p>试试其他关键词，或清除筛选。</p>
+        <button class="rsi-button" type="button" data-market-reset>清除筛选</button>
+      </div>
+    </market-catalog>
+
+    <aside class="market-contribute">
+      <h2>分享一个 System</h2>
+      <p>从 Panel 导出设计，通过 GitHub PR 提交。审核后的配置会自动加入此目录。</p>
+      <a class="rsi-text-link" href={sitePath('docs/contribute/')}>打开投稿指南</a>
+    </aside>
+  </section>
+</SiteLayout>
+
+<script>
+  import '../../scripts/market';
+</script>

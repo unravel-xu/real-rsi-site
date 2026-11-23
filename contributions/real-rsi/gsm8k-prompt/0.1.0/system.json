@@ -1,0 +1,1572 @@
+{
+  "format": "real-rsi.system-design.v2",
+  "document": {
+    "schema_id": "rsi.system-definition.v4",
+    "definition": {
+      "definition_id": "763198ec3b524d049ca73e9ff107a50a",
+      "revision": 1,
+      "name": "GSM8K Prompt 自改进 MVP",
+      "instances": [
+        {
+          "instance_id": "provider",
+          "module_type": "provider",
+          "interface_ref": "provider.gsm8k-file.v1",
+          "implementation_scope": "experiment",
+          "implementation_ref": "",
+          "config": {
+            "dataset_config": "main"
+          }
+        },
+        {
+          "instance_id": "executor",
+          "module_type": "real-rsi-gsm8k-prompt-executor",
+          "interface_ref": "real-rsi-gsm8k-prompt-executor.execute.v1",
+          "implementation_scope": "experiment",
+          "config": {},
+          "implementation_ref": ""
+        },
+        {
+          "instance_id": "improver",
+          "module_type": "real-rsi-gsm8k-prompt-improver",
+          "interface_ref": "real-rsi-gsm8k-prompt-improver.improve.v1",
+          "implementation_scope": "experiment",
+          "implementation_ref": ""
+        },
+        {
+          "instance_id": "evaluator",
+          "module_type": "evaluator",
+          "interface_ref": "evaluator.numeric.v2",
+          "implementation_scope": "experiment",
+          "implementation_ref": "",
+          "config": {
+            "result_interface_ref": "real-rsi-gsm8k-prompt-executor.execute.v1"
+          }
+        }
+      ],
+      "limits": {
+        "max_calls": 23,
+        "max_calls_scope": "experiment",
+        "required": true,
+        "max_iterations": 1,
+        "max_iterations_scope": "experiment"
+      },
+      "source_declarations": {
+        "data_connections": [
+          {
+            "binding_id": "task-to-executor",
+            "source": {
+              "instance_id": "provider",
+              "interface_ref": "provider.gsm8k-file.v1",
+              "namespace": "output",
+              "port": "/tasks/*/task"
+            },
+            "target": {
+              "instance_id": "executor",
+              "interface_ref": "real-rsi-gsm8k-prompt-executor.execute.v1",
+              "namespace": "input",
+              "port": "/task"
+            }
+          },
+          {
+            "binding_id": "execution-to-evaluation",
+            "source": {
+              "instance_id": "executor",
+              "interface_ref": "real-rsi-gsm8k-prompt-executor.execute.v1",
+              "namespace": "call",
+              "port": "/call_record_ref"
+            },
+            "target": {
+              "instance_id": "evaluator",
+              "interface_ref": "evaluator.numeric.v2",
+              "namespace": "input",
+              "port": "/result_ref"
+            }
+          },
+          {
+            "binding_id": "reference-to-evaluation",
+            "source": {
+              "instance_id": "provider",
+              "interface_ref": "provider.gsm8k-file.v1",
+              "namespace": "output",
+              "port": "/tasks/*/evaluation_spec_ref"
+            },
+            "target": {
+              "instance_id": "evaluator",
+              "interface_ref": "evaluator.numeric.v2",
+              "namespace": "input",
+              "port": "/evaluation_spec_ref"
+            }
+          },
+          {
+            "binding_id": "candidate-to-executor",
+            "source": {
+              "instance_id": "improver",
+              "interface_ref": "real-rsi-gsm8k-prompt-improver.improve.v1",
+              "namespace": "output",
+              "port": "/candidate_prompt_ref"
+            },
+            "target": {
+              "instance_id": "executor",
+              "interface_ref": "real-rsi-gsm8k-prompt-executor.execute.v1",
+              "namespace": "input",
+              "port": "/prompt_ref"
+            }
+          }
+        ]
+      },
+      "workflow": {
+        "entry_site": "choose-test-only",
+        "sites": [
+          {
+            "kind": "branch",
+            "site_id": "choose-test-only",
+            "condition": {
+              "op": "literal",
+              "value": false,
+              "name": null,
+              "path": "",
+              "args": [],
+              "fields": {}
+            }
+          },
+          {
+            "kind": "call",
+            "site_id": "load-train",
+            "instance_id": "provider",
+            "inputs": {
+              "dataset": {
+                "op": "experiment_input",
+                "value": null,
+                "name": "train_dataset",
+                "path": "",
+                "args": [],
+                "fields": {}
+              },
+              "selection": {
+                "op": "literal",
+                "value": {
+                  "split": "train",
+                  "limit": 4,
+                  "sampling": "first"
+                },
+                "name": null,
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "result": "train_data",
+            "experiment": null,
+            "prompt_ref": null,
+            "accounting": "module",
+            "phase": "load",
+            "on_failure": "stop"
+          },
+          {
+            "kind": "branch",
+            "site_id": "check-train",
+            "condition": {
+              "op": "eq",
+              "value": null,
+              "name": null,
+              "path": "",
+              "args": [
+                {
+                  "op": "state",
+                  "value": null,
+                  "name": "train_data",
+                  "path": "/output/task_count",
+                  "args": [],
+                  "fields": {}
+                },
+                {
+                  "op": "literal",
+                  "value": 4,
+                  "name": null,
+                  "path": "",
+                  "args": [],
+                  "fields": {}
+                }
+              ],
+              "fields": {}
+            }
+          },
+          {
+            "kind": "assign",
+            "site_id": "start-improvement-round",
+            "values": {},
+            "round": {
+              "op": "literal",
+              "value": 1,
+              "name": null,
+              "path": "",
+              "args": [],
+              "fields": {}
+            },
+            "round_status": null
+          },
+          {
+            "kind": "subflow",
+            "site_id": "diagnose-1",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/0/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/0/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "diagnose_1": "sample"
+            },
+            "experiment": null,
+            "phase": "diagnosis"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "diagnose-2",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/1/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/1/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "diagnose_2": "sample"
+            },
+            "experiment": null,
+            "phase": "diagnosis"
+          },
+          {
+            "kind": "call",
+            "site_id": "propose",
+            "instance_id": "improver",
+            "inputs": {
+              "base_prompt_ref": {
+                "op": "experiment_input",
+                "value": null,
+                "name": "base_prompt",
+                "path": "",
+                "args": [],
+                "fields": {}
+              },
+              "diagnostics": {
+                "op": "list",
+                "value": null,
+                "name": null,
+                "path": "",
+                "args": [
+                  {
+                    "op": "state",
+                    "value": null,
+                    "name": "diagnose_1",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  },
+                  {
+                    "op": "state",
+                    "value": null,
+                    "name": "diagnose_2",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  }
+                ],
+                "fields": {}
+              }
+            },
+            "result": "proposal",
+            "experiment": null,
+            "prompt_ref": null,
+            "accounting": "module",
+            "phase": "improvement",
+            "on_failure": "stop"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "validate-base-1",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/2/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/2/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "validate-base_1": "sample"
+            },
+            "experiment": null,
+            "phase": "validation-baseline"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "validate-base-2",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/3/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/3/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "validate-base_2": "sample"
+            },
+            "experiment": null,
+            "phase": "validation-baseline"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "validate-candidate-1",
+            "subflow_id": "score-one",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/2/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/2/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              },
+              "prompt_ref": {
+                "op": "state",
+                "value": null,
+                "name": "proposal",
+                "path": "/output/candidate_prompt_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "validate-candidate_1": "sample"
+            },
+            "experiment": null,
+            "phase": "validation-candidate"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "validate-candidate-2",
+            "subflow_id": "score-one",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/3/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "train_data",
+                "path": "/output/tasks/3/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              },
+              "prompt_ref": {
+                "op": "state",
+                "value": null,
+                "name": "proposal",
+                "path": "/output/candidate_prompt_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "validate-candidate_2": "sample"
+            },
+            "experiment": null,
+            "phase": "validation-candidate"
+          },
+          {
+            "kind": "branch",
+            "site_id": "select-prompt",
+            "condition": {
+              "op": "gt",
+              "value": null,
+              "name": null,
+              "path": "",
+              "args": [
+                {
+                  "op": "add",
+                  "value": null,
+                  "name": null,
+                  "path": "",
+                  "args": [
+                    {
+                      "op": "state",
+                      "value": null,
+                      "name": "validate-candidate_1",
+                      "path": "/score",
+                      "args": [],
+                      "fields": {}
+                    },
+                    {
+                      "op": "state",
+                      "value": null,
+                      "name": "validate-candidate_2",
+                      "path": "/score",
+                      "args": [],
+                      "fields": {}
+                    }
+                  ],
+                  "fields": {}
+                },
+                {
+                  "op": "add",
+                  "value": null,
+                  "name": null,
+                  "path": "",
+                  "args": [
+                    {
+                      "op": "state",
+                      "value": null,
+                      "name": "validate-base_1",
+                      "path": "/score",
+                      "args": [],
+                      "fields": {}
+                    },
+                    {
+                      "op": "state",
+                      "value": null,
+                      "name": "validate-base_2",
+                      "path": "/score",
+                      "args": [],
+                      "fields": {}
+                    }
+                  ],
+                  "fields": {}
+                }
+              ],
+              "fields": {}
+            }
+          },
+          {
+            "kind": "assign",
+            "site_id": "adopt-candidate",
+            "values": {
+              "active_prompt_ref": {
+                "op": "state",
+                "value": null,
+                "name": "proposal",
+                "path": "/output/candidate_prompt_ref",
+                "args": [],
+                "fields": {}
+              },
+              "candidate_adopted": {
+                "op": "literal",
+                "value": true,
+                "name": null,
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "round": null,
+            "round_status": null
+          },
+          {
+            "kind": "assign",
+            "site_id": "retain-baseline",
+            "values": {
+              "active_prompt_ref": {
+                "op": "state",
+                "value": null,
+                "name": "proposal",
+                "path": "/output/base_prompt_ref",
+                "args": [],
+                "fields": {}
+              },
+              "candidate_adopted": {
+                "op": "literal",
+                "value": false,
+                "name": null,
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "round": null,
+            "round_status": null
+          },
+          {
+            "kind": "call",
+            "site_id": "load-test",
+            "instance_id": "provider",
+            "inputs": {
+              "dataset": {
+                "op": "experiment_input",
+                "value": null,
+                "name": "test_dataset",
+                "path": "",
+                "args": [],
+                "fields": {}
+              },
+              "selection": {
+                "op": "literal",
+                "value": {
+                  "split": "test",
+                  "limit": 2,
+                  "sampling": "first"
+                },
+                "name": null,
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "result": "test_data",
+            "experiment": null,
+            "prompt_ref": null,
+            "accounting": "module",
+            "phase": "load",
+            "on_failure": "stop"
+          },
+          {
+            "kind": "branch",
+            "site_id": "check-test",
+            "condition": {
+              "op": "eq",
+              "value": null,
+              "name": null,
+              "path": "",
+              "args": [
+                {
+                  "op": "state",
+                  "value": null,
+                  "name": "test_data",
+                  "path": "/output/task_count",
+                  "args": [],
+                  "fields": {}
+                },
+                {
+                  "op": "literal",
+                  "value": 2,
+                  "name": null,
+                  "path": "",
+                  "args": [],
+                  "fields": {}
+                }
+              ],
+              "fields": {}
+            }
+          },
+          {
+            "kind": "subflow",
+            "site_id": "test-base-1",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/0/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/0/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "test-base_1": "sample"
+            },
+            "experiment": null,
+            "phase": "test-baseline"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "test-base-2",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/1/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/1/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "test-base_2": "sample"
+            },
+            "experiment": null,
+            "phase": "test-baseline"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "test-active-1",
+            "subflow_id": "score-one",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/0/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/0/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              },
+              "prompt_ref": {
+                "op": "state",
+                "value": null,
+                "name": "active_prompt_ref",
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "test-active_1": "sample"
+            },
+            "experiment": null,
+            "phase": "test-active"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "test-active-2",
+            "subflow_id": "score-one",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/1/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "test_data",
+                "path": "/output/tasks/1/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              },
+              "prompt_ref": {
+                "op": "state",
+                "value": null,
+                "name": "active_prompt_ref",
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "test-active_2": "sample"
+            },
+            "experiment": null,
+            "phase": "test-active"
+          },
+          {
+            "kind": "assign",
+            "site_id": "record-test",
+            "values": {
+              "test_scores": {
+                "op": "object",
+                "value": null,
+                "name": null,
+                "path": "",
+                "args": [],
+                "fields": {
+                  "baseline": {
+                    "op": "add",
+                    "value": null,
+                    "name": null,
+                    "path": "",
+                    "args": [
+                      {
+                        "op": "state",
+                        "value": null,
+                        "name": "test-base_1",
+                        "path": "/score",
+                        "args": [],
+                        "fields": {}
+                      },
+                      {
+                        "op": "state",
+                        "value": null,
+                        "name": "test-base_2",
+                        "path": "/score",
+                        "args": [],
+                        "fields": {}
+                      }
+                    ],
+                    "fields": {}
+                  },
+                  "active": {
+                    "op": "add",
+                    "value": null,
+                    "name": null,
+                    "path": "",
+                    "args": [
+                      {
+                        "op": "state",
+                        "value": null,
+                        "name": "test-active_1",
+                        "path": "/score",
+                        "args": [],
+                        "fields": {}
+                      },
+                      {
+                        "op": "state",
+                        "value": null,
+                        "name": "test-active_2",
+                        "path": "/score",
+                        "args": [],
+                        "fields": {}
+                      }
+                    ],
+                    "fields": {}
+                  }
+                }
+              }
+            },
+            "round": null,
+            "round_status": null
+          },
+          {
+            "kind": "branch",
+            "site_id": "report-decision",
+            "condition": {
+              "op": "state",
+              "value": null,
+              "name": "candidate_adopted",
+              "path": "",
+              "args": [],
+              "fields": {}
+            }
+          },
+          {
+            "kind": "call",
+            "site_id": "load-test-only",
+            "instance_id": "provider",
+            "inputs": {
+              "dataset": {
+                "op": "experiment_input",
+                "value": null,
+                "name": "test_dataset",
+                "path": "",
+                "args": [],
+                "fields": {}
+              },
+              "selection": {
+                "op": "literal",
+                "value": {
+                  "split": "test",
+                  "limit": 2,
+                  "sampling": "first"
+                },
+                "name": null,
+                "path": "",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "result": "test_only_data",
+            "experiment": null,
+            "prompt_ref": null,
+            "accounting": "module",
+            "phase": "load",
+            "on_failure": "stop"
+          },
+          {
+            "kind": "branch",
+            "site_id": "check-test-only",
+            "condition": {
+              "op": "eq",
+              "value": null,
+              "name": null,
+              "path": "",
+              "args": [
+                {
+                  "op": "state",
+                  "value": null,
+                  "name": "test_only_data",
+                  "path": "/output/task_count",
+                  "args": [],
+                  "fields": {}
+                },
+                {
+                  "op": "literal",
+                  "value": 2,
+                  "name": null,
+                  "path": "",
+                  "args": [],
+                  "fields": {}
+                }
+              ],
+              "fields": {}
+            }
+          },
+          {
+            "kind": "subflow",
+            "site_id": "test-only-1",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "test_only_data",
+                "path": "/output/tasks/0/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "test_only_data",
+                "path": "/output/tasks/0/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "test-only_1": "sample"
+            },
+            "experiment": null,
+            "phase": "test-only"
+          },
+          {
+            "kind": "subflow",
+            "site_id": "test-only-2",
+            "subflow_id": "score-base",
+            "parameters": {
+              "task": {
+                "op": "state",
+                "value": null,
+                "name": "test_only_data",
+                "path": "/output/tasks/1/task",
+                "args": [],
+                "fields": {}
+              },
+              "evaluation_spec_ref": {
+                "op": "state",
+                "value": null,
+                "name": "test_only_data",
+                "path": "/output/tasks/1/evaluation_spec_ref",
+                "args": [],
+                "fields": {}
+              }
+            },
+            "exports": {
+              "test-only_2": "sample"
+            },
+            "experiment": null,
+            "phase": "test-only"
+          },
+          {
+            "kind": "terminal",
+            "site_id": "test-only-completed",
+            "stop_reason": "test_only_completed",
+            "status": "completed"
+          },
+          {
+            "kind": "terminal",
+            "site_id": "adopted",
+            "stop_reason": "candidate_improved_validation",
+            "status": "completed"
+          },
+          {
+            "kind": "terminal",
+            "site_id": "retained",
+            "stop_reason": "baseline_retained",
+            "status": "completed"
+          },
+          {
+            "kind": "terminal",
+            "site_id": "missing-fixture-data",
+            "stop_reason": "insufficient_fixture_data",
+            "status": "incomplete"
+          }
+        ],
+        "transitions": [
+          {
+            "transition_id": "choose-test-only-true-load-test-only",
+            "source_site": "choose-test-only",
+            "target_site": "load-test-only",
+            "route": "true"
+          },
+          {
+            "transition_id": "choose-test-only-false-load-train",
+            "source_site": "choose-test-only",
+            "target_site": "load-train",
+            "route": "false"
+          },
+          {
+            "transition_id": "load-test-only-to-check-test-only",
+            "source_site": "load-test-only",
+            "target_site": "check-test-only",
+            "route": "completed"
+          },
+          {
+            "transition_id": "check-test-only-true-test-only-1",
+            "source_site": "check-test-only",
+            "target_site": "test-only-1",
+            "route": "true"
+          },
+          {
+            "transition_id": "check-test-only-false-missing-fixture-data",
+            "source_site": "check-test-only",
+            "target_site": "missing-fixture-data",
+            "route": "false"
+          },
+          {
+            "transition_id": "test-only-1-to-test-only-2",
+            "source_site": "test-only-1",
+            "target_site": "test-only-2",
+            "route": "completed"
+          },
+          {
+            "transition_id": "test-only-2-to-test-only-completed",
+            "source_site": "test-only-2",
+            "target_site": "test-only-completed",
+            "route": "completed"
+          },
+          {
+            "transition_id": "load-train-to-check-train",
+            "source_site": "load-train",
+            "target_site": "check-train",
+            "route": "completed"
+          },
+          {
+            "transition_id": "check-train-true-start-improvement-round",
+            "source_site": "check-train",
+            "target_site": "start-improvement-round",
+            "route": "true"
+          },
+          {
+            "transition_id": "check-train-false-missing-fixture-data",
+            "source_site": "check-train",
+            "target_site": "missing-fixture-data",
+            "route": "false"
+          },
+          {
+            "transition_id": "start-improvement-round-to-diagnose-1",
+            "source_site": "start-improvement-round",
+            "target_site": "diagnose-1",
+            "route": "completed"
+          },
+          {
+            "transition_id": "diagnose-1-to-diagnose-2",
+            "source_site": "diagnose-1",
+            "target_site": "diagnose-2",
+            "route": "completed"
+          },
+          {
+            "transition_id": "diagnose-2-to-propose",
+            "source_site": "diagnose-2",
+            "target_site": "propose",
+            "route": "completed"
+          },
+          {
+            "transition_id": "propose-to-validate-base-1",
+            "source_site": "propose",
+            "target_site": "validate-base-1",
+            "route": "completed"
+          },
+          {
+            "transition_id": "validate-base-1-to-validate-base-2",
+            "source_site": "validate-base-1",
+            "target_site": "validate-base-2",
+            "route": "completed"
+          },
+          {
+            "transition_id": "validate-base-2-to-validate-candidate-1",
+            "source_site": "validate-base-2",
+            "target_site": "validate-candidate-1",
+            "route": "completed"
+          },
+          {
+            "transition_id": "validate-candidate-1-to-validate-candidate-2",
+            "source_site": "validate-candidate-1",
+            "target_site": "validate-candidate-2",
+            "route": "completed"
+          },
+          {
+            "transition_id": "validate-candidate-2-to-select-prompt",
+            "source_site": "validate-candidate-2",
+            "target_site": "select-prompt",
+            "route": "completed"
+          },
+          {
+            "transition_id": "select-prompt-true-adopt-candidate",
+            "source_site": "select-prompt",
+            "target_site": "adopt-candidate",
+            "route": "true"
+          },
+          {
+            "transition_id": "select-prompt-false-retain-baseline",
+            "source_site": "select-prompt",
+            "target_site": "retain-baseline",
+            "route": "false"
+          },
+          {
+            "transition_id": "adopt-candidate-to-load-test",
+            "source_site": "adopt-candidate",
+            "target_site": "load-test",
+            "route": "completed"
+          },
+          {
+            "transition_id": "retain-baseline-to-load-test",
+            "source_site": "retain-baseline",
+            "target_site": "load-test",
+            "route": "completed"
+          },
+          {
+            "transition_id": "load-test-to-check-test",
+            "source_site": "load-test",
+            "target_site": "check-test",
+            "route": "completed"
+          },
+          {
+            "transition_id": "check-test-true-test-base-1",
+            "source_site": "check-test",
+            "target_site": "test-base-1",
+            "route": "true"
+          },
+          {
+            "transition_id": "check-test-false-missing-fixture-data",
+            "source_site": "check-test",
+            "target_site": "missing-fixture-data",
+            "route": "false"
+          },
+          {
+            "transition_id": "test-base-1-to-test-base-2",
+            "source_site": "test-base-1",
+            "target_site": "test-base-2",
+            "route": "completed"
+          },
+          {
+            "transition_id": "test-base-2-to-test-active-1",
+            "source_site": "test-base-2",
+            "target_site": "test-active-1",
+            "route": "completed"
+          },
+          {
+            "transition_id": "test-active-1-to-test-active-2",
+            "source_site": "test-active-1",
+            "target_site": "test-active-2",
+            "route": "completed"
+          },
+          {
+            "transition_id": "test-active-2-to-record-test",
+            "source_site": "test-active-2",
+            "target_site": "record-test",
+            "route": "completed"
+          },
+          {
+            "transition_id": "record-test-to-report-decision",
+            "source_site": "record-test",
+            "target_site": "report-decision",
+            "route": "completed"
+          },
+          {
+            "transition_id": "report-decision-true-adopted",
+            "source_site": "report-decision",
+            "target_site": "adopted",
+            "route": "true"
+          },
+          {
+            "transition_id": "report-decision-false-retained",
+            "source_site": "report-decision",
+            "target_site": "retained",
+            "route": "false"
+          }
+        ],
+        "state_schema": {
+          "type": "object",
+          "properties": {
+            "train_data": {
+              "type": "object"
+            },
+            "test_data": {
+              "type": "object"
+            },
+            "proposal": {
+              "type": "object"
+            },
+            "test_only_data": {
+              "type": "object"
+            },
+            "active_prompt_ref": {
+              "type": "string",
+              "minLength": 1
+            },
+            "candidate_adopted": {
+              "type": "boolean"
+            },
+            "test_scores": {
+              "type": "object"
+            },
+            "diagnose_1": {
+              "type": "object"
+            },
+            "diagnose_2": {
+              "type": "object"
+            },
+            "validate-base_1": {
+              "type": "object"
+            },
+            "validate-base_2": {
+              "type": "object"
+            },
+            "validate-candidate_1": {
+              "type": "object"
+            },
+            "validate-candidate_2": {
+              "type": "object"
+            },
+            "test-base_1": {
+              "type": "object"
+            },
+            "test-base_2": {
+              "type": "object"
+            },
+            "test-active_1": {
+              "type": "object"
+            },
+            "test-active_2": {
+              "type": "object"
+            },
+            "test-only_1": {
+              "type": "object"
+            },
+            "test-only_2": {
+              "type": "object"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "workflow_id": "real-rsi-gsm8k-prompt-smoke",
+        "subflows": [
+          {
+            "entry_site": "solve",
+            "sites": [
+              {
+                "kind": "call",
+                "site_id": "solve",
+                "instance_id": "executor",
+                "inputs": {
+                  "task": {
+                    "op": "parameter",
+                    "value": null,
+                    "name": "task",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  },
+                  "prompt_ref": {
+                    "op": "experiment_input",
+                    "value": null,
+                    "name": "base_prompt",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  }
+                },
+                "result": "execution",
+                "experiment": null,
+                "prompt_ref": null,
+                "accounting": "module",
+                "phase": null,
+                "on_failure": "stop"
+              },
+              {
+                "kind": "call",
+                "site_id": "evaluate",
+                "instance_id": "evaluator",
+                "inputs": {
+                  "result_ref": {
+                    "op": "state",
+                    "value": null,
+                    "name": "execution",
+                    "path": "/call_ref",
+                    "args": [],
+                    "fields": {}
+                  },
+                  "evaluation_spec_ref": {
+                    "op": "parameter",
+                    "value": null,
+                    "name": "evaluation_spec_ref",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  }
+                },
+                "result": "evaluation",
+                "experiment": null,
+                "prompt_ref": null,
+                "accounting": "task",
+                "phase": null,
+                "on_failure": "stop"
+              },
+              {
+                "kind": "assign",
+                "site_id": "record-score",
+                "values": {
+                  "sample": {
+                    "op": "object",
+                    "value": null,
+                    "name": null,
+                    "path": "",
+                    "args": [],
+                    "fields": {
+                      "question": {
+                        "op": "parameter",
+                        "value": null,
+                        "name": "task",
+                        "path": "/input/instruction",
+                        "args": [],
+                        "fields": {}
+                      },
+                      "score": {
+                        "op": "state",
+                        "value": null,
+                        "name": "evaluation",
+                        "path": "/output/score",
+                        "args": [],
+                        "fields": {}
+                      }
+                    }
+                  }
+                },
+                "round": null,
+                "round_status": null
+              },
+              {
+                "kind": "terminal",
+                "site_id": "return-score",
+                "stop_reason": null,
+                "status": "completed"
+              }
+            ],
+            "transitions": [
+              {
+                "transition_id": "solve-to-evaluate",
+                "source_site": "solve",
+                "target_site": "evaluate",
+                "route": "completed"
+              },
+              {
+                "transition_id": "evaluate-to-record-score",
+                "source_site": "evaluate",
+                "target_site": "record-score",
+                "route": "completed"
+              },
+              {
+                "transition_id": "record-score-to-return-score",
+                "source_site": "record-score",
+                "target_site": "return-score",
+                "route": "completed"
+              }
+            ],
+            "state_schema": {
+              "type": "object",
+              "properties": {
+                "execution": {
+                  "type": "object"
+                },
+                "evaluation": {
+                  "type": "object"
+                },
+                "sample": {
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "subflow_id": "score-base",
+            "parameter_schema": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "object"
+                },
+                "evaluation_spec_ref": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "task",
+                "evaluation_spec_ref"
+              ],
+              "additionalProperties": false
+            }
+          },
+          {
+            "entry_site": "solve",
+            "sites": [
+              {
+                "kind": "call",
+                "site_id": "solve",
+                "instance_id": "executor",
+                "inputs": {
+                  "task": {
+                    "op": "parameter",
+                    "value": null,
+                    "name": "task",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  },
+                  "prompt_ref": {
+                    "op": "parameter",
+                    "value": null,
+                    "name": "prompt_ref",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  }
+                },
+                "result": "execution",
+                "experiment": null,
+                "prompt_ref": null,
+                "accounting": "module",
+                "phase": null,
+                "on_failure": "stop"
+              },
+              {
+                "kind": "call",
+                "site_id": "evaluate",
+                "instance_id": "evaluator",
+                "inputs": {
+                  "result_ref": {
+                    "op": "state",
+                    "value": null,
+                    "name": "execution",
+                    "path": "/call_ref",
+                    "args": [],
+                    "fields": {}
+                  },
+                  "evaluation_spec_ref": {
+                    "op": "parameter",
+                    "value": null,
+                    "name": "evaluation_spec_ref",
+                    "path": "",
+                    "args": [],
+                    "fields": {}
+                  }
+                },
+                "result": "evaluation",
+                "experiment": null,
+                "prompt_ref": null,
+                "accounting": "task",
+                "phase": null,
+                "on_failure": "stop"
+              },
+              {
+                "kind": "assign",
+                "site_id": "record-score",
+                "values": {
+                  "sample": {
+                    "op": "object",
+                    "value": null,
+                    "name": null,
+                    "path": "",
+                    "args": [],
+                    "fields": {
+                      "question": {
+                        "op": "parameter",
+                        "value": null,
+                        "name": "task",
+                        "path": "/input/instruction",
+                        "args": [],
+                        "fields": {}
+                      },
+                      "score": {
+                        "op": "state",
+                        "value": null,
+                        "name": "evaluation",
+                        "path": "/output/score",
+                        "args": [],
+                        "fields": {}
+                      }
+                    }
+                  }
+                },
+                "round": null,
+                "round_status": null
+              },
+              {
+                "kind": "terminal",
+                "site_id": "return-score",
+                "stop_reason": null,
+                "status": "completed"
+              }
+            ],
+            "transitions": [
+              {
+                "transition_id": "solve-to-evaluate",
+                "source_site": "solve",
+                "target_site": "evaluate",
+                "route": "completed"
+              },
+              {
+                "transition_id": "evaluate-to-record-score",
+                "source_site": "evaluate",
+                "target_site": "record-score",
+                "route": "completed"
+              },
+              {
+                "transition_id": "record-score-to-return-score",
+                "source_site": "record-score",
+                "target_site": "return-score",
+                "route": "completed"
+              }
+            ],
+            "state_schema": {
+              "type": "object",
+              "properties": {
+                "execution": {
+                  "type": "object"
+                },
+                "evaluation": {
+                  "type": "object"
+                },
+                "sample": {
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "subflow_id": "score-one",
+            "parameter_schema": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "object"
+                },
+                "evaluation_spec_ref": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "prompt_ref": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "task",
+                "evaluation_spec_ref",
+                "prompt_ref"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ]
+      }
+    },
+    "requirements": {
+      "name": "GSM8K Prompt 自改进 MVP",
+      "goal": "根据 GSM8K 训练问题的诊断改进 Prompt。",
+      "inputs_outputs": "输入训练和测试题文件与基线 Prompt。输出评分、候选决策与运行证据。",
+      "success_criteria": "候选在训练验证子集上严格改善才采纳，最后评估留出的测试题。",
+      "constraints": "模块通过声明的接口传递数据；练习样本使用确定性实现。"
+    },
+    "metadata": {
+      "instances": {
+        "provider": {
+          "name": "Provider",
+          "description": "加载训练与测试题，提供可追溯的评分参考。"
+        },
+        "executor": {
+          "name": "Executor",
+          "description": "按传入的 Prompt 解题，并记录输出。"
+        },
+        "improver": {
+          "name": "Improver",
+          "description": "从训练诊断提出候选 Prompt。"
+        },
+        "evaluator": {
+          "name": "Evaluator",
+          "description": "将解题输出与题目对应的评分参考核对。"
+        }
+      }
+    },
+    "interface_drafts": []
+  },
+  "notes": {}
+}

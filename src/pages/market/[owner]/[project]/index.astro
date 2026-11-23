@@ -1,0 +1,70 @@
+---
+import type { GetStaticPaths } from 'astro';
+import SiteLayout from '../../../../layouts/SiteLayout.astro';
+import { loadCatalog } from '../../../../lib/catalog.mjs';
+import { sitePath } from '../../../../lib/links';
+
+export const getStaticPaths = (() => loadCatalog().map((project) => ({
+  params: { owner: project.owner, project: project.project },
+  props: { project },
+}))) satisfies GetStaticPaths;
+
+const { project } = Astro.props;
+const { latest, releases, owner } = project;
+const { manifest, metadata, definition } = latest;
+const download = (version: string, file: string) =>
+  sitePath(`downloads/${owner}/${project.project}/${version}/${file}`);
+const isGsm8k = manifest.package_id === 'real-rsi/gsm8k-prompt';
+---
+
+<SiteLayout title={`${definition.name}｜real-rsi`} description={metadata.summary} section="market">
+  <section class="page-intro detail-intro">
+    <div class="rsi-container">
+      <nav class="rsi-breadcrumb" aria-label="当前位置">
+        <a href={sitePath('market/')}>配置市场</a><span aria-hidden="true">/</span><span>{manifest.package_id}</span>
+      </nav>
+      <h1>{definition.name}</h1>
+      <p class="rsi-lead">{metadata.summary}</p>
+      <ul class="tag-list" aria-label="标签">
+        <li>{metadata.category}</li>
+        {metadata.tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <div class="rsi-container detail-layout">
+    <div class="detail-main">
+      <section aria-labelledby="modules-heading">
+        <h2 id="modules-heading">Module 组成</h2>
+        <dl class="module-list">
+          {definition.instances.map((instance) => (
+            <div><dt>{instance.instance_id}</dt><dd><code>{instance.interface_ref}</code></dd></div>
+          ))}
+        </dl>
+      </section>
+      <section aria-labelledby="versions-heading">
+        <h2 id="versions-heading">版本下载</h2>
+        <ul class="version-list">
+          {releases.map((release) => (
+            <li>
+              <strong>v{release.version}</strong>
+              <a href={download(release.version, 'design.zip')} download>设计 ZIP</a>
+              <a href={download(release.version, 'system.json')} download>system.json</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+    <aside class="download-panel" aria-labelledby="download-heading">
+      <h2 id="download-heading">导入到 Panel</h2>
+      <p>下载设计，在 Panel 的「导入系统」中选择文件，会创建独立草稿。</p>
+      <a class="rsi-button rsi-button-primary" href={download(latest.version, 'design.zip')} download>下载设计 ZIP</a>
+      <a class="rsi-text-link" href={sitePath('docs/import/')}>查看导入指南</a>
+      <dl class="download-facts">
+        <div><dt>最新版本</dt><dd>v{latest.version}</dd></div>
+        <div><dt>System Schema</dt><dd><code>{manifest.system_schema}</code></dd></div>
+      </dl>
+      {isGsm8k && <a class="rsi-text-link" href={sitePath('docs/gsm8k/#复跑实验')}>查看 GSM8K 复跑条件</a>}
+    </aside>
+  </div>
+</SiteLayout>

@@ -1,0 +1,57 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import PackageCard from '../components/PackageCard.astro';
+import { loadCatalog } from '../lib/catalog.mjs';
+import { sitePath } from '../lib/links';
+
+const catalog = loadCatalog();
+const featured = catalog.find(({ owner, project }) => owner === 'real-rsi' && project === 'gsm8k-prompt') ?? catalog[0];
+---
+
+<SiteLayout
+  title="real-rsi｜研究系统工作台"
+  description="浏览 real-rsi 文档与社区 System 配置，下载设计并导入自己的 Panel。"
+  section="home"
+>
+  <section class="rsi-container home-hero" aria-labelledby="home-title">
+    <div class="home-intro">
+      <p class="rsi-eyebrow">real-rsi 研究系统工作台</p>
+      <h1 id="home-title">构建、分享你的<br />研究系统<span>。</span></h1>
+      <p class="rsi-lead">把 Module、接口与 Workflow 组织成可审阅的 System。下载社区设计，在自己的 Panel 里继续编辑。</p>
+      <div class="rsi-actions">
+        <a class="rsi-button rsi-button-primary" href={sitePath('market/')}>浏览配置市场</a>
+        <a class="rsi-button" href={sitePath('docs/')}>阅读文档</a>
+      </div>
+    </div>
+
+    <figure class="workflow-preview">
+      <figcaption>
+        <span class="workflow-label"><span class="workflow-indicator"></span> GSM8K 示例</span>
+        <span class="workflow-file">SYSTEM DESIGN</span>
+      </figcaption>
+      <div class="workflow-title">Prompt 自改进</div>
+      <div class="workflow-subtitle">诊断 · 改进 · 验证</div>
+      <div class="workflow-grid">
+        <div class="workflow-node"><i></i><div><strong>Provider</strong><span>加载题目</span></div></div>
+        <div class="workflow-node"><i></i><div><strong>Executor</strong><span>执行 Prompt</span></div></div>
+        <div class="workflow-node"><i></i><div><strong>Improver</strong><span>提出候选</span></div></div>
+        <div class="workflow-node"><i></i><div><strong>Evaluator</strong><span>比较结果</span></div></div>
+      </div>
+    </figure>
+  </section>
+
+  <section class="rsi-container home-resources" aria-labelledby="resources-title">
+    <div class="rsi-section-heading">
+      <h2 id="resources-title">从 GSM8K 开始</h2>
+      <a class="rsi-text-link" href={sitePath('market/')}>查看全部配置</a>
+    </div>
+    <div class="home-resources-grid">
+      {featured && <PackageCard project={featured} />}
+      <div class="home-guide-list">
+        <a href={sitePath('docs/import/')}><strong>导入 System 设计</strong><span>把设计 ZIP 或 system.json 打开为独立草稿。</span></a>
+        <a href={sitePath('docs/gsm8k/')}><strong>了解 GSM8K 示例</strong><span>查看四个 Module 的职责和 CLI 复跑条件。</span></a>
+        <a href={sitePath('docs/contribute/')}><strong>分享你的配置</strong><span>导出设计并向公开仓库提交 GitHub PR。</span></a>
+      </div>
+    </div>
+  </section>
+</SiteLayout>
